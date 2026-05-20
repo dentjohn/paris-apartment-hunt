@@ -1111,5 +1111,61 @@
     "notes": "USD $2,309,700 → EUR ~€2.12M. With terrace, 168 m².",
     "image": "",
     "data_quality": "search-results-extract"
+  },
+  {
+    "id": "LF-102253695",
+    "source": "Agence Immobilière La Tour CTII (via Le Figaro Immobilier)",
+    "url": "https://immobilier.lefigaro.fr/annonces/annonce-102253695.html",
+    "title": "Duplex, Passy (Paris 16th)",
+    "arr": "75116",
+    "arr_name": "Paris 16th",
+    "neighborhood": "Passy",
+    "street": null,
+    "price_eur": 1190000,
+    "surface_m2": 106.28,
+    "bedrooms": 3,
+    "pieces": 5,
+    "floor": null,
+    "elevator": true,
+    "exposure": null,
+    "year_built": null,
+    "condition": "unknown (search-results-extract)",
+    "features": [
+      "duplex",
+      "5 rooms",
+      "Métro 9 nearby",
+      "Quartier Passy"
+    ],
+    "notes": "From Le Figaro Immobilier filter scrape (duplex + elevator + ≥100m² + DPE A-D + ≤€2.5M). Badged 'À découvrir' and 'Exclusivité'. Description starts: 'À Paris 16ème, dans le quartier de Passy, nous vous proposons un duplex à vendre dans un immeuble ancien…'",
+    "image": "",
+    "data_quality": "search-results-extract"
+  },
+  {
+    "id": "LF-99927477",
+    "source": "Les Beaux Quartiers (via Le Figaro Immobilier)",
+    "url": "https://immobilier.lefigaro.fr/annonces/annonce-99927477.html",
+    "title": "Duplex, Lorette-Martyrs (Paris 9th)",
+    "arr": "75109",
+    "arr_name": "Paris 9th",
+    "neighborhood": "Lorette-Martyrs",
+    "street": null,
+    "price_eur": 1519000,
+    "surface_m2": 107.73,
+    "bedrooms": 3,
+    "pieces": 4,
+    "floor": null,
+    "elevator": true,
+    "exposure": null,
+    "year_built": null,
+    "condition": "unknown (search-results-extract)",
+    "features": [
+      "duplex",
+      "near rue des Martyrs",
+      "fireplace (parquet+cheminée visible in photos)",
+      "Quartier Lorette-Martyrs"
+    ],
+    "notes": "From Le Figaro Immobilier filter scrape (duplex + elevator + ≥100m² + DPE A-D + ≤€2.5M). Marked 'Coup de cœur du secteur' by Le Figaro (local favorite). Description starts: 'À proximité immédiate de la très recherchée rue des Martyrs, au coeur du 9e arrondissement, ce duple…'",
+    "image": "",
+    "data_quality": "search-results-extract"
   }
 ]
