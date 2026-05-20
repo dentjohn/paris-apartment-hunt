@@ -1,0 +1,19 @@
+Price scenario,Appreciation scenario,Hold (yrs),Exit price (€),Net of 4% exit fees (€),All-in basis (€),Total gain (€),Annualized return
+Negotiated to 10th-band,Bear (Paris prime stagnant),5,1724006,1655046,1900342,-245296,-2.73
+Negotiated to 10th-band,Bear (Paris prime stagnant),10,1681334,1614081,1900342,-286261,-1.62
+Negotiated to 10th-band,Base (flat to mild recovery),5,1857934,1783616,1900342,-116726,-1.26
+Negotiated to 10th-band,Base (flat to mild recovery),10,1952707,1874599,1900342,-25743,-0.14
+Negotiated to 10th-band,Bull (return to long-run trend),5,2049318,1967346,1900342,67004,0.7
+Negotiated to 10th-band,Bull (return to long-run trend),10,2375722,2280693,1900342,380351,1.84
+Negotiated to mid-band,Bear (Paris prime stagnant),5,1905480,1829261,2100378,-271117,-2.73
+Negotiated to mid-band,Bear (Paris prime stagnant),10,1858317,1783984,2100378,-316394,-1.62
+Negotiated to mid-band,Base (flat to mild recovery),5,2053505,1971365,2100378,-129013,-1.26
+Negotiated to mid-band,Base (flat to mild recovery),10,2158255,2071925,2100378,-28453,-0.14
+Negotiated to mid-band,Bull (return to long-run trend),5,2265036,2174435,2100378,74057,0.7
+Negotiated to mid-band,Bull (return to long-run trend),10,2625798,2520766,2100378,420388,1.84
+Full ask,Bear (Paris prime stagnant),5,1950498,1872478,2150000,-277522,-2.73
+Full ask,Bear (Paris prime stagnant),10,1902220,1826131,2150000,-323869,-1.62
+Full ask,Base (flat to mild recovery),5,2102020,2017939,2150000,-132061,-1.26
+Full ask,Base (flat to mild recovery),10,2209244,2120874,2150000,-29126,-0.14
+Full ask,Bull (return to long-run trend),5,2318548,2225806,2150000,75806,0.7
+Full ask,Bull (return to long-run trend),10,2687833,2580319,2150000,430319,1.84

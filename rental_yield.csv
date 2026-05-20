@@ -1,0 +1,10 @@
+Price scenario,Rent scenario,Gross rent (€),Effective rent after vacancy (€),Carrying cost (€),Pre-tax net (€),Post-tax net @30% (€),Gross yield %,Net yield % (pre-tax),Net yield % (post-tax)
+Negotiated to 10th-band,"Low (encadré unfurnished, €25/m²)",55824,51358,30390,20968,14678,2.94,1.1,0.77
+Negotiated to 10th-band,"Mid (furnished, €30/m²)",66989,61630,31109,30521,21365,3.53,1.61,1.12
+Negotiated to 10th-band,"High (premium furnished, €35/m²)",78154,71901,31828,40074,28052,4.11,2.11,1.48
+Negotiated to mid-band,"Low (encadré unfurnished, €25/m²)",55824,51358,32250,19108,13375,2.66,0.91,0.64
+Negotiated to mid-band,"Mid (furnished, €30/m²)",66989,61630,32969,28660,20062,3.19,1.36,0.96
+Negotiated to mid-band,"High (premium furnished, €35/m²)",78154,71901,33688,38213,26749,3.72,1.82,1.27
+Full ask,"Low (encadré unfurnished, €25/m²)",55824,51358,32712,18646,13052,2.6,0.87,0.61
+Full ask,"Mid (furnished, €30/m²)",66989,61630,33431,28199,19739,3.12,1.31,0.92
+Full ask,"High (premium furnished, €35/m²)",78154,71901,34150,37751,26426,3.64,1.76,1.23

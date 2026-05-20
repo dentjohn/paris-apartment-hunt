@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_eval",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__obsidian-vault-fs__read_file",
+      "mcp__Claude_in_Chrome__find",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__get_page_text",
+      "mcp__Claude_in_Chrome__read_page",
+      "mcp__Claude_in_Chrome__read_console_messages",
+      "mcp__Claude_in_Chrome__read_network_requests",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "mcp__b91bdc00-1ed1-4bea-ad95-e3c30755ab69__search_threads",
+      "mcp__b91bdc00-1ed1-4bea-ad95-e3c30755ab69__get_thread",
+      "mcp__b91bdc00-1ed1-4bea-ad95-e3c30755ab69__list_drafts",
+      "mcp__b91bdc00-1ed1-4bea-ad95-e3c30755ab69__list_labels",
+      "mcp__scheduled-tasks__list_scheduled_tasks",
+      "mcp__a753fe31-5f03-47f7-8e39-befdb1701086__list_events",
+      "mcp__a753fe31-5f03-47f7-8e39-befdb1701086__list_calendars",
+      "mcp__a753fe31-5f03-47f7-8e39-befdb1701086__get_event",
+      "mcp__mcp-registry__search_mcp_registry",
+      "mcp__filesystem__list_allowed_directories"
+    ]
+  }
+}
