@@ -58,18 +58,38 @@ Edit `listings_input.json` — append a new object with the fields below. Then r
 
 Required: `id`, `price_eur`, `surface_m2`, `arr`, `arr_name`. Everything else is optional but improves the analysis.
 
-If the new listing is in an arrondissement not yet in `DVF_ARRS` at the top of `build_dashboard.py`, download the DVF CSV first:
+### Bulk add via `merge_listings.py`
+
+The fastest way to add many listings at once is to scrape them with a Claude conversation that has the Chrome MCP connected (see the **Scrape prompt** section below), save the returned JSON to `new_listings.json`, and run:
 
 ```bash
-ARR=75109  # Paris 9th
-for YEAR in 2024 2025; do
-  curl -sL -o "dvf_${ARR}_${YEAR}.csv" \
-    "https://files.data.gouv.fr/geo-dvf/latest/csv/${YEAR}/communes/75/${ARR}.csv"
-done
-# then add "75109" to the DVF_ARRS list in build_dashboard.py
+.venv/bin/python merge_listings.py new_listings.json --rebuild --push
 ```
 
-Paris commune codes are `751XX` where XX is the arrondissement (e.g. `75103` for the 3rd, `75116` for the 16th). NOT `750XX` — that won't work.
+What it does:
+- Validates each entry (drops bad arr codes, missing fields, absurd prices)
+- Dedupes against existing IDs in `listings_input.json`
+- Auto-downloads DVF for any arrondissement not yet covered
+- Patches `DVF_ARRS` in `build_dashboard.py`
+- `--rebuild` runs `build_dashboard.py`; `--push` commits and pushes to git
+- `--dry-run` shows what would change without writing anything
+
+Paris commune codes are `751XX` where XX is the arrondissement (`75103` for the 3rd, `75116` for the 16th — **NOT** `750XX`).
+
+### Scrape prompt (for a fresh Claude conversation with Chrome MCP)
+
+Open the listing site in your browser, apply filters, then paste this in a new Claude conversation:
+
+> You're helping me extract listings for the paris-apartment-hunt dashboard. I'm at a Paris real-estate listing site with filters applied. Use the `mcp__Claude_in_Chrome__*` tools to scrape every listing visible on this page that matches: Paris proper (drop "À Xkm de Paris" suburbs), surface ≥ 80 m², price ≤ €2.5M, apartment or duplex.
+>
+> Use `javascript_tool` to extract structured data in one call — for each article card, parse the URL, the largest 6-7 digit number as the total price (skips €/m² and €/month), the m² value, the arrondissement number, bedroom/piece counts, and the agency. Return a JSON array I can paste into `new_listings.json`. Required keys per entry: `id` (prefix by source, e.g. `LF-` `SL-` `BI-`), `source`, `url`, `title`, `arr` (e.g. `"75107"`), `arr_name` (e.g. `"Paris 7th"`), `price_eur`, `surface_m2`, `bedrooms`, `pieces`, `data_quality: "search-results-extract"`. Don't fabricate URLs or surfaces — skip anything you can't confirm.
+
+Then locally:
+
+```bash
+# Paste Claude's JSON array into new_listings.json
+.venv/bin/python merge_listings.py new_listings.json --rebuild --push
+```
 
 ## File map
 
