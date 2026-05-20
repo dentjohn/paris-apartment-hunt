@@ -24,7 +24,7 @@ YEARS = [2024, 2025]
 
 # Arrondissement codes used. Add to this when new listings come from
 # new arrondissements (and download the corresponding CSV first).
-DVF_ARRS = ["75101", "75102", "75103", "75104", "75105", "75106", "75107", "75108", "75109", "75110", "75111", "75112", "75116", "75117", "75118"]
+DVF_ARRS = ["75101", "75102", "75103", "75104", "75105", "75106", "75107", "75108", "75109", "75110", "75111", "75112", "75113", "75115", "75116", "75117", "75118", "75120"]
 
 # Surface bucket boundaries (m²) and labels
 BUCKETS = [(0, 50, "<50"), (50, 80, "50-80"), (80, 120, "80-120"),
