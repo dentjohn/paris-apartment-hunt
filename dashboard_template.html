@@ -153,6 +153,8 @@
   tbody tr.summary-row.value-candidate { background: #e1f3e8; }
   tbody tr.summary-row.value-candidate:hover { background: #cfead9; }
   tbody tr.summary-row.value-candidate.benchmark { background: linear-gradient(90deg, #fef9e7 0%, #e1f3e8 70%); }
+  tbody tr.summary-row.value-candidate-soft { background: #f0f7f3; }
+  tbody tr.summary-row.value-candidate-soft:hover { background: #e3f0e9; }
   td.title-cell {
     font-weight: 500;
     max-width: 320px;
@@ -317,7 +319,7 @@
   <details id="howto-block" open style="margin-bottom:18px;background:#fef9e7;border:1px solid #f0d878;border-radius:6px;padding:14px 22px">
     <summary style="cursor:pointer;font-weight:700;color:var(--accent);font-size:14px">📖 How to find the best deals — read me first</summary>
     <div style="margin-top:12px;font-size:13px;line-height:1.65">
-      <p style="margin:0 0 10px"><strong>Rows in <span style="background:#e1f3e8;padding:1px 8px;border-radius:3px">light green</span></strong> are <strong>genuine value candidates</strong>: verdict = <span class="verdict underpriced">underpriced</span> AND €/m² ≥ €5,000 (i.e. not a data error). Start there.</p>
+      <p style="margin:0 0 10px"><strong>Rows in <span style="background:#e1f3e8;padding:1px 8px;border-radius:3px">strong green</span></strong> are <strong>value candidates</strong>: verdict = <span class="verdict underpriced">underpriced</span> AND €/m² ≥ €5,000. Start here.<br>Rows in <span style="background:#f0f7f3;padding:1px 8px;border-radius:3px">pale mint</span> are <strong>soft candidates</strong>: verdict = <span class="verdict below-band">below-band</span> AND €/m² ≥ €5,000 — often a real handicap (low floor, north exposure, condition), occasionally a deal. Worth a second look after the strong ones.</p>
       <p style="margin:0 0 10px"><strong>The verdict in the rightmost column</strong> is the asking €/m² compared to <em>recorded DVF transactions</em> in the same arrondissement and surface band. Think of it as "is the seller asking inside the recent-sale range for this size + location?"</p>
       <table style="border-collapse:collapse;margin:8px 0 14px;font-size:12.5px">
         <tr><td style="padding:2px 10px 2px 0"><span class="verdict underpriced">underpriced</span></td><td>≥8% below the IQR floor — investigate closely</td></tr>
@@ -401,17 +403,27 @@
   document.getElementById('subtitle').textContent =
     `Generated ${data.generated_at} • Filters: €${(data.filter_criteria.budget_eur[0]/1e6).toFixed(1)}M–€${(data.filter_criteria.budget_eur[1]/1e6).toFixed(1)}M • ${data.filter_criteria.surface_m2[0]}–${data.filter_criteria.surface_m2[1]} m² • ${data.filter_criteria.geography}`;
 
-  const verdictCount = {};
-  listings.forEach(l => { verdictCount[l.verdict] = (verdictCount[l.verdict] || 0) + 1; });
-
-  document.getElementById('summary-bar').innerHTML = `
-    <div class="stat">Listings<strong>${listings.length}</strong></div>
-    <div class="stat">In-band<strong>${verdictCount['in-band'] || 0}</strong></div>
-    <div class="stat">Below band<strong>${verdictCount['below-band'] || 0}</strong></div>
-    <div class="stat">Above band<strong>${verdictCount['above-band'] || 0}</strong></div>
-    <div class="stat">Overpriced<strong>${verdictCount['overpriced'] || 0}</strong></div>
-    <div class="stat">Needs data<strong>${verdictCount['needs-data'] || 0}</strong></div>
-  `;
+  function updateSummary(rows) {
+    const vc = {};
+    let strong = 0, soft = 0;
+    rows.forEach(l => {
+      vc[l.verdict] = (vc[l.verdict] || 0) + 1;
+      const ppm = l.price_per_m2 || 0;
+      if (l.verdict === 'underpriced' && ppm >= 5000) strong++;
+      else if (l.verdict === 'below-band' && ppm >= 5000) soft++;
+    });
+    const label = rows.length === listings.length ? 'Listings' : 'Shown';
+    document.getElementById('summary-bar').innerHTML = `
+      <div class="stat">${label}<strong>${rows.length}${rows.length !== listings.length ? ' / ' + listings.length : ''}</strong></div>
+      <div class="stat" style="border-left:3px solid #1c7c4c;padding-left:8px">🟢 Value candidates<strong>${strong}</strong></div>
+      <div class="stat" style="border-left:3px solid #6fb88a;padding-left:8px">🟢 Soft candidates<strong>${soft}</strong></div>
+      <div class="stat">In-band<strong>${vc['in-band'] || 0}</strong></div>
+      <div class="stat">Above band<strong>${vc['above-band'] || 0}</strong></div>
+      <div class="stat">Overpriced<strong>${vc['overpriced'] || 0}</strong></div>
+      <div class="stat">Needs data<strong>${vc['needs-data'] || 0}</strong></div>
+    `;
+  }
+  updateSummary(listings);
 
   // ---- Populate filter selects ----
   const arrs = [...new Set(listings.map(l => l.arr))].sort();
@@ -508,10 +520,13 @@
     const benchmarkBadge = l.benchmark ? `<span class="badge" style="background:#fef3c7;color:#92400e">Benchmark</span>` : '';
     const exclusiveBadge = l.exclusive ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">Exclusive</span>` : '';
 
-    const isValueCandidate = l.verdict === 'underpriced' && (l.price_per_m2 || 0) >= 5000;
+    const ppm = l.price_per_m2 || 0;
+    const isStrongValue = l.verdict === 'underpriced' && ppm >= 5000;
+    const isSoftValue = l.verdict === 'below-band' && ppm >= 5000;
     const rowClasses = ['summary-row'];
     if (l.benchmark) rowClasses.push('benchmark');
-    if (isValueCandidate) rowClasses.push('value-candidate');
+    if (isStrongValue) rowClasses.push('value-candidate');
+    else if (isSoftValue) rowClasses.push('value-candidate-soft');
     const summary = `
       <tr class="${rowClasses.join(' ')}" data-id="${l.id}">
         <td>${l.arr_name || l.arr}</td>
@@ -576,6 +591,7 @@
     const tbody = document.getElementById('listings-body');
     tbody.innerHTML = sorted.map((l, i) => renderRow(l, i)).join('');
 
+    updateSummary(sorted);
     document.getElementById('empty-state').style.display = sorted.length === 0 ? 'block' : 'none';
 
     document.querySelectorAll('th[data-sort]').forEach(th => {
