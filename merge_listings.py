@@ -25,7 +25,6 @@ import json
 import re
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
@@ -74,15 +73,19 @@ def fetch_dvf(arr: str) -> bool:
         if out.exists() and out.stat().st_size > 200:
             continue
         url = DVF_URL.format(year=year, arr=arr)
-        try:
-            print(f"  fetching dvf {arr}/{year}…", end=" ", flush=True)
-            req = urllib.request.Request(url, headers={"User-Agent": "merge_listings.py"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                out.write_bytes(r.read())
-            print(f"{out.stat().st_size:,} bytes")
-        except Exception as exc:
-            print(f"FAILED: {exc}")
+        print(f"  fetching dvf {arr}/{year}…", end=" ", flush=True)
+        # Use curl rather than urllib because macOS framework Python (3.14+)
+        # ships without root certs by default and TLS verification fails.
+        # curl uses the OS cert store.
+        r = subprocess.run(
+            ["curl", "-sL", "--fail", "--max-time", "30", "-o", str(out), url],
+            capture_output=True, text=True,
+        )
+        if r.returncode != 0 or not out.exists() or out.stat().st_size < 200:
+            print(f"FAILED (curl exit {r.returncode}): {r.stderr.strip()[:200]}")
             ok = False
+        else:
+            print(f"{out.stat().st_size:,} bytes")
     return ok
 
 
