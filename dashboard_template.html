@@ -159,6 +159,19 @@
     font-weight: 500;
     max-width: 320px;
   }
+  .reno-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    margin-right: 3px;
+    background: rgba(0,0,0,0.05);
+    color: var(--text);
+  }
+  .reno-tag.reno-renovated { background: var(--green-bg); color: var(--green); }
+  .reno-tag.reno-period-preserved { background: #fef3c7; color: #92400e; }
+  .reno-tag.reno-needs-work { background: var(--red-bg); color: var(--red); }
+  .reno-tag.reno-unknown { background: var(--grey-bg); color: var(--muted); }
   td.title-cell a.title-link {
     color: var(--text);
     text-decoration: none;
@@ -298,6 +311,10 @@
     <select id="filter-verdict" multiple size="4" style="min-width:140px"></select>
   </div>
   <div class="ctrl">
+    <label title="Detected from listing description + photo signals. A listing can have more than one tag (e.g. renovated AND period-preserved). Multi-select = OR.">Renovation <span style="opacity:0.5">ⓘ</span></label>
+    <select id="filter-reno" multiple size="4" style="min-width:170px"></select>
+  </div>
+  <div class="ctrl">
     <label>Price (€M)</label>
     <div class="range-pair">
       <input type="number" id="price-min" step="0.05" placeholder="min" />
@@ -343,6 +360,7 @@
         <li><strong>Filter the Verdict column</strong> to <code style="background:#e1f3e8;padding:1px 6px;border-radius:3px">underpriced</code> + <code style="background:#e3edf8;padding:1px 6px;border-radius:3px">below-band</code> (hold ⌘/Ctrl to multi-select).</li>
         <li><strong>Click "Δ vs median" header</strong> to sort ascending — the steepest discounts to DVF median surface first.</li>
         <li><strong>Filter Arrondissement</strong> to your shortlist if you have a geographic preference. The dataset is already scoped to <strong>arrondissements 1-9 + 16</strong> (central + posh west) — see methodology if you want the others added back.</li>
+        <li><strong>Filter Renovation</strong> to <code style="background:#e1f3e8;padding:1px 6px;border-radius:3px">🆕 Renovated</code> if you want move-in-ready, or <code style="background:#fde7e6;padding:1px 6px;border-radius:3px">🔨 Needs work</code> if you want to add value via renovation. <code style="background:#fef3c7;padding:1px 6px;border-radius:3px">🏛️ Period features</code> marks Haussmannian charm (moldings, parquet, fireplace) preserved. Most bulk-scraped listings will read <code>❓ Unknown</code> because the description didn't mention condition.</li>
         <li><strong>Click any row</strong> to expand its full expert analysis: strengths, concerns, photo-condition signals, raw description.</li>
       </ol>
       <p style="margin:0 0 6px"><strong>The caveats DVF can't capture:</strong></p>
@@ -453,6 +471,20 @@
     verdictSel.appendChild(opt);
   });
 
+  const RENO_LABELS = {
+    'renovated': '🆕 Renovated (move-in)',
+    'period-preserved': '🏛️ Period features',
+    'needs-work': '🔨 Needs work',
+    'unknown': '❓ Unknown',
+  };
+  const renoSel = document.getElementById('filter-reno');
+  Object.entries(RENO_LABELS).forEach(([v, lbl]) => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = lbl;
+    renoSel.appendChild(opt);
+  });
+
   // ---- State ----
   let sortBy = 'price_eur';
   let sortDir = 'asc';
@@ -462,6 +494,7 @@
     return {
       arrs: [...arrSel.selectedOptions].map(o => o.value),
       verdicts: [...verdictSel.selectedOptions].map(o => o.value),
+      renos: [...renoSel.selectedOptions].map(o => o.value),
       ppmMin: parseFloat(document.getElementById('ppm-min').value) || null,
       priceMin: parseFloat(document.getElementById('price-min').value) * 1e6 || null,
       priceMax: parseFloat(document.getElementById('price-max').value) * 1e6 || null,
@@ -475,6 +508,7 @@
     return rows.filter(l => {
       if (f.arrs.length && !f.arrs.includes(l.arr)) return false;
       if (f.verdicts.length && !f.verdicts.includes(l.verdict)) return false;
+      if (f.renos.length && !(l.renovation_tags || []).some(t => f.renos.includes(t))) return false;
       if (f.priceMin && (l.price_eur || 0) < f.priceMin) return false;
       if (f.priceMax && (l.price_eur || Infinity) > f.priceMax) return false;
       if (f.surfaceMin && (l.surface_m2 || 0) < f.surfaceMin) return false;
@@ -595,6 +629,7 @@
                 <dt>Charges/yr</dt><dd>${l.charges_yr_eur ? '€' + l.charges_yr_eur.toLocaleString() : '—'}</dd>
                 <dt>Taxe fonc.</dt><dd>${l.taxe_fonciere_eur ? '€' + l.taxe_fonciere_eur.toLocaleString() : '—'}</dd>
                 <dt>Data quality</dt><dd>${esc(l.data_quality || 'curated')}</dd>
+                <dt>Renovation</dt><dd>${(l.renovation_tags || []).map(t => `<span class="reno-tag reno-${esc(t)}">${esc(RENO_LABELS[t] || t)}</span>`).join(' ') || '—'}</dd>
               </dl>
               ${l.image ? `<img class="image" src="${esc(l.image)}" alt="${esc(l.title || '')}" loading="lazy" onerror="this.style.display='none'" />` : ''}
             </div>
@@ -656,13 +691,14 @@
     });
   });
 
-  ['filter-arr','filter-verdict','price-min','price-max','surface-min','surface-max','ppm-min','search'].forEach(id => {
+  ['filter-arr','filter-verdict','filter-reno','price-min','price-max','surface-min','surface-max','ppm-min','search'].forEach(id => {
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
   });
   document.getElementById('reset-btn').addEventListener('click', () => {
     arrSel.selectedIndex = -1;
     verdictSel.selectedIndex = -1;
+    renoSel.selectedIndex = -1;
     ['price-min','price-max','surface-min','surface-max','search'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ppm-min').value = '5000'; // restore plausibility default
     expanded.clear();

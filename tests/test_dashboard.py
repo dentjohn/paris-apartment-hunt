@@ -194,6 +194,36 @@ def test_listing_url_falls_back_to_google_with_site_filter():
     assert "1%20290%20000" in url or "1+290+000" in url
 
 
+def test_renovation_tags_classification():
+    """_renovation_tags must classify common French/English signals correctly."""
+    sys.path.insert(0, str(ROOT))
+    from build_dashboard import _renovation_tags
+
+    # Renovated only
+    assert "renovated" in _renovation_tags({"notes": "Apartment in parfait état, fully renovated"})
+    assert "renovated" in _renovation_tags({"condition": "perfect condition (confirmed visually)"})
+    assert "renovated" in _renovation_tags({"notes": "Clé en main, refait à neuf en 2023"})
+
+    # Period preserved
+    tags = _renovation_tags({"condition_signals": ["intact Louis XV marble fireplace", "boiserie wall paneling"]})
+    assert "period-preserved" in tags
+
+    # Needs work
+    assert "needs-work" in _renovation_tags({"notes": "Appartement à rénover, travaux à prévoir"})
+    assert "needs-work" in _renovation_tags({"condition": "dated finishes (visible)"})
+
+    # Combined — renovated AND period-preserved
+    tags = _renovation_tags({
+        "condition": "renovated showcase Haussmannian",
+        "features": ["fresh white paint", "elaborate ceiling moldings/rosette intact"],
+    })
+    assert "renovated" in tags and "period-preserved" in tags
+
+    # No signal → unknown
+    assert _renovation_tags({"notes": "Appartement de 100 m² au 3ème étage"}) == ["unknown"]
+    assert _renovation_tags({}) == ["unknown"]
+
+
 def test_arr_name_ordinals():
     """arr_name() must produce correct English ordinals — especially 11/12/13."""
     sys.path.insert(0, str(ROOT))

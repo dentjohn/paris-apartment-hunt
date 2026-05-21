@@ -202,6 +202,66 @@ def _listing_url(L: dict) -> tuple[str, str]:
     return f"https://www.google.com/search?q={q}", "search"
 
 
+def _renovation_tags(L: dict) -> list[str]:
+    """Infer renovation status tags from condition + condition_signals + features + notes.
+
+    Returns a list (possibly empty) drawn from:
+      - "renovated"        : photos/listing claim move-in-ready condition
+      - "period-preserved" : Haussmannian features (moldings, parquet, fireplace) intact
+      - "needs-work"       : explicit signals that renovation is required
+      - "unknown"          : no signal in any text field
+
+    A listing can carry multiple tags (e.g. a renovated apartment that still
+    has its period features). "unknown" is mutually exclusive with the others.
+    """
+    txt = " ".join([
+        L.get("condition") or "",
+        " ".join(L.get("condition_signals") or []),
+        " ".join(L.get("features") or []),
+        L.get("notes") or "",
+    ]).lower()
+
+    tags = []
+
+    PERIOD = [
+        "moulure", "molding", "boiserie", "cheminée", "fireplace",
+        "point de hongrie", "versailles parquet", "versailles/herringbone",
+        "herringbone parquet", "haussmannien", "haussmannian",
+        "pierre de taille", "stuc", "hauteur sous plafond", "high ceiling",
+        "ceiling molding", "ceiling rosette", "rosette",
+        "casement window", "espagnolette",
+    ]
+    if any(k in txt for k in PERIOD):
+        tags.append("period-preserved")
+
+    RENOVATED = [
+        "rénové", "renove", "renovated", "refait à neuf", "refait a neuf",
+        "parfait état", "perfect condition", "très bon état", "tres bon etat",
+        "entièrement rénové", "entierement renove",
+        "clé en main", "cle en main", "turnkey", "move-in ready", "move in ready",
+        "récemment rénové", "recemment renove", "fraîchement rénové",
+        "showcase", "designer-staged", "designer staged", "high-end",
+        "haut de gamme", "premium", "boffi", "fresh white paint",
+        "renovated common areas",
+    ]
+    if any(k in txt for k in RENOVATED):
+        tags.append("renovated")
+
+    NEEDS_WORK = [
+        "à rénover", "a renover", "à rafraîchir", "a rafraichir",
+        "travaux à prévoir", "travaux a prevoir", "à moderniser", "a moderniser",
+        "needs work", "needs refresh", "dated finishes", "1970s",
+        "rénovation à prévoir", "renovation a prevoir", "fixer", "fixer-upper",
+        "cosmetic refresh", "cosmetic work needed",
+    ]
+    if any(k in txt for k in NEEDS_WORK):
+        tags.append("needs-work")
+
+    if not tags:
+        tags.append("unknown")
+    return tags
+
+
 def arr_name(arr_code: str) -> str:
     """Convert a commune code like '75103' to 'Paris 3rd'.
 
@@ -357,11 +417,13 @@ def main():
 
         analysis = _expert_analysis(L, overall, band)
         resolved_url, url_kind = _listing_url(L)
+        reno_tags = _renovation_tags(L)
 
         listings_out.append({
             **L,
             "url": resolved_url,
             "url_kind": url_kind,
+            "renovation_tags": reno_tags,
             "price_per_m2": round(ask_per_m2) if ask_per_m2 else None,
             "dvf_arr_median": round(overall["median"]) if overall else None,
             "dvf_arr_n": overall.get("n") if overall else None,
