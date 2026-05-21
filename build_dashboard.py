@@ -109,6 +109,21 @@ def _bucket_stats(df: pd.DataFrame, surface: float | None) -> dict:
     }
 
 
+def arr_name(arr_code: str) -> str:
+    """Convert a commune code like '75103' to 'Paris 3rd'.
+
+    Correct for 11/12/13 (falls through to 'th'). Only valid for Paris
+    arrondissements 1-20 — for anything else the ordinal is wrong but the
+    function never raises.
+    """
+    n = int(arr_code[-2:])
+    if 10 <= n % 100 <= 20:
+        suf = "th"  # 11th, 12th, 13th
+    else:
+        suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"Paris {n}{suf}"
+
+
 def _arr_overall(df: pd.DataFrame) -> dict:
     if df.empty: return {}
     s = df["eur_per_m2"]
@@ -272,7 +287,7 @@ def main():
             "geography": "Paris arrondissements 1-9 + 16",
         },
         "arrondissement_stats": {
-            arr: {**stats, "arr_name": f"Paris {int(arr[-2:])}{'st' if arr[-2:]=='01' else 'nd' if arr[-2:]=='02' else 'rd' if arr[-2:]=='03' else 'th'}"}
+            arr: {**stats, "arr_name": arr_name(arr)}
             for arr, stats in arr_stats.items() if stats
         },
         "listings": listings_out,

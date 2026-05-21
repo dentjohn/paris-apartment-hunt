@@ -1,5 +1,7 @@
 # Paris Apartment Hunt — Analysis & Dashboard
 
+[![test](https://github.com/dentjohn/paris-apartment-hunt/actions/workflows/test.yml/badge.svg)](https://github.com/dentjohn/paris-apartment-hunt/actions/workflows/test.yml)
+
 A reproducible pipeline for evaluating Paris apartment listings against actual recorded transactions (DVF), with a self-contained HTML dashboard for browsing.
 
 ## What this is
@@ -26,6 +28,15 @@ start dashboard/dashboard.html       # Windows
 ```
 
 The build script reads `listings_input.json` + the `dvf_*.csv` files in this folder, computes verdicts, and writes `dashboard/dashboard.html` (self-contained) and `dashboard/listings.json` (for tooling).
+
+## Tests
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest -v
+```
+
+8 tests cover the build pipeline, JSON validity, the embedded JS parse (via `node --check`, which catches things like duplicate `const` declarations), arr-code coverage by DVF, and the `arr_name()` helper. Runs in ~1 second. The same suite runs on every push and PR via [`.github/workflows/test.yml`](.github/workflows/test.yml).
 
 ## How to add a listing
 

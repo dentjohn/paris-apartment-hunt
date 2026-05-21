@@ -175,13 +175,20 @@ def main() -> int:
         print("committing and pushing …")
         n = len(to_add)
         msg = f"Add {n} listing{'s' if n != 1 else ''}"
-        for cmd in (["git", "add", "-A"],
-                    ["git", "commit", "-q", "-m", msg],
-                    ["git", "push", "-q", "origin"]):
-            r = subprocess.run(cmd, cwd=REPO)
+        subprocess.run(["git", "add", "-A"], cwd=REPO, check=True)
+        # If nothing is staged (e.g. re-merge of an already-merged input),
+        # skip commit + push instead of dying.
+        diff = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=REPO)
+        if diff.returncode == 0:
+            print("no changes to commit — skipping push")
+        else:
+            r = subprocess.run(["git", "commit", "-q", "-m", msg], cwd=REPO)
             if r.returncode != 0:
-                die(f"git step failed: {' '.join(cmd)}")
-        print("pushed.")
+                die("git commit failed")
+            r = subprocess.run(["git", "push", "-q", "origin"], cwd=REPO)
+            if r.returncode != 0:
+                die("git push failed")
+            print("pushed.")
 
     return 0
 

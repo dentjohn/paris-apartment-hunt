@@ -582,9 +582,10 @@
                 <dt>Exposure</dt><dd>${esc(l.exposure || '—')}</dd>
                 <dt>Year built</dt><dd>${l.year_built ?? '—'}</dd>
                 <dt>Condition</dt><dd>${esc(l.condition || '—')}</dd>
-                <dt>DPE</dt><dd>${l.dpe_class || '—'}</dd>
+                <dt>DPE</dt><dd>${esc(l.dpe_class || '—')}</dd>
                 <dt>Charges/yr</dt><dd>${l.charges_yr_eur ? '€' + l.charges_yr_eur.toLocaleString() : '—'}</dd>
                 <dt>Taxe fonc.</dt><dd>${l.taxe_fonciere_eur ? '€' + l.taxe_fonciere_eur.toLocaleString() : '—'}</dd>
+                <dt>Data quality</dt><dd>${esc(l.data_quality || 'curated')}</dd>
               </dl>
               ${l.image ? `<img class="image" src="${esc(l.image)}" alt="${esc(l.title || '')}" loading="lazy" onerror="this.style.display='none'" />` : ''}
             </div>
@@ -633,11 +634,15 @@
     render();
   });
 
+  // Numeric columns where DESCENDING is the natural first-click default
+  // (e.g. "what's the BIGGEST apartment?" → surface DESC; "what's the BIGGEST
+  // discount?" → premium_vs_median_pct ASC because negative is bigger discount).
+  const NUMERIC_DESC_FIRST = new Set(['surface_m2', 'dvf_band_median']);
   document.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.sort;
       if (sortBy === k) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-      else { sortBy = k; sortDir = ['price_eur', 'surface_m2', 'price_per_m2', 'dvf_band_median', 'premium_vs_median_pct'].includes(k) ? 'asc' : 'asc'; }
+      else { sortBy = k; sortDir = NUMERIC_DESC_FIRST.has(k) ? 'desc' : 'asc'; }
       render();
     });
   });
