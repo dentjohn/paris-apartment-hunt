@@ -333,7 +333,7 @@
         <li><strong>Confirm <code style="background:#fff7d6;padding:1px 6px;border-radius:3px">€/m² min ≥ 5,000</code></strong> in the filters above — this hides <em>data errors</em> (viager mislabels, partial-ownership listings, bad scrapes). Anything below €5k/m² in Paris is almost certainly not a real deal.</li>
         <li><strong>Filter the Verdict column</strong> to <code style="background:#e1f3e8;padding:1px 6px;border-radius:3px">underpriced</code> + <code style="background:#e3edf8;padding:1px 6px;border-radius:3px">below-band</code> (hold ⌘/Ctrl to multi-select).</li>
         <li><strong>Click "Δ vs median" header</strong> to sort ascending — the steepest discounts to DVF median surface first.</li>
-        <li><strong>Optionally filter Arrondissement</strong> to your shortlist (e.g. 3rd, 6th, 7th) if you have a geographic preference.</li>
+        <li><strong>Arrondissement defaults to 1-9 + 16</strong> (central + posh west). Hold ⌘/Ctrl-click to add the others (10-15, 17-20) or remove ones you don't want.</li>
         <li><strong>Click any row</strong> to expand its full expert analysis: strengths, concerns, photo-condition signals, raw description.</li>
       </ol>
       <p style="margin:0 0 6px"><strong>The caveats DVF can't capture:</strong></p>
@@ -426,6 +426,10 @@
   updateSummary(listings);
 
   // ---- Populate filter selects ----
+  const DEFAULT_ARRS = ['75101','75102','75103','75104','75105','75106','75107','75108','75109','75116'];
+  function applyDefaultArrs() {
+    [...arrSel.options].forEach(o => { o.selected = DEFAULT_ARRS.includes(o.value); });
+  }
   const arrs = [...new Set(listings.map(l => l.arr))].sort();
   const arrSel = document.getElementById('filter-arr');
   arrs.forEach(a => {
@@ -434,6 +438,7 @@
     opt.textContent = `${a} — Paris ${parseInt(a.slice(-2))}${parseInt(a.slice(-2))==1?'st':parseInt(a.slice(-2))==2?'nd':parseInt(a.slice(-2))==3?'rd':'th'}`;
     arrSel.appendChild(opt);
   });
+  applyDefaultArrs();
 
   const verdicts = ['underpriced', 'below-band', 'in-band', 'above-band', 'overpriced', 'needs-data'];
   const verdictSel = document.getElementById('filter-verdict');
@@ -632,7 +637,8 @@
     document.getElementById(id).addEventListener('change', render);
   });
   document.getElementById('reset-btn').addEventListener('click', () => {
-    arrSel.selectedIndex = -1;
+    applyDefaultArrs();
+    // (using applyDefaultArrs above instead of clearing)
     verdictSel.selectedIndex = -1;
     ['price-min','price-max','surface-min','surface-max','search'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ppm-min').value = '5000'; // restore plausibility default
