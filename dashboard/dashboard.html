@@ -353,7 +353,8 @@
   <button class="preset-btn" data-preset="quality-move-in" title="Underpriced or below-band listings with verified move-in-ready condition, sorted by biggest discount first">🏠 Quality move-in deals</button>
   <button class="preset-btn" data-preset="renovation-arbitrage" title="Already-discounted listings where photos confirm work is needed — discount + renovation lift potential, sorted by cheapest €/m² first">🔨 Renovation arbitrage</button>
   <button class="preset-btn" data-preset="haussmannian-charm" title="Fair-priced listings (in-band) with preserved period features (moldings, parquet, fireplace)">🏛️ Haussmannian charm</button>
-  <button class="preset-btn preset-clear" data-preset="clear" title="Clear verdict + renovation filters (keeps arr / price / surface / €/m² min)">Clear verdict + reno</button>
+  <button class="preset-btn" data-preset="luxury" title="150 m²+, 2+ bedrooms, elevator, renovated. No verdict filter — willing to pay full market for the best inventory. Will be narrow because bedrooms/elevator data is sparse on bulk scrapes.">💎 Luxury 150m²+</button>
+  <button class="preset-btn preset-clear" data-preset="clear" title="Clear verdict + renovation + bedrooms + elevator filters (keeps arr / price / surface / €/m² min)">Clear filters</button>
 </div>
 
 <div class="controls">
@@ -384,6 +385,18 @@
       <span>–</span>
       <input type="number" id="surface-max" step="5" placeholder="max" />
     </div>
+  </div>
+  <div class="ctrl">
+    <label title="Permissive: listings without a bedroom count (mostly bulk scrapes from Bien'ici) PASS this filter. Only listings with a confirmed bedroom count below the threshold are excluded.">Min bedrooms <span style="opacity:0.5">ⓘ</span></label>
+    <input type="number" id="bedrooms-min" step="1" min="0" placeholder="any" style="min-width:80px" />
+  </div>
+  <div class="ctrl">
+    <label title="Permissive: listings without elevator data (most bulk scrapes) PASS this filter. Only listings with a confirmed elevator status that contradicts your selection are excluded.">Elevator <span style="opacity:0.5">ⓘ</span></label>
+    <select id="elevator-filter" style="min-width:90px">
+      <option value="">Any</option>
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select>
   </div>
   <div class="ctrl">
     <label title="Hides implausibly low €/m² that are almost certainly data errors (viager mislabels, fractional ownership, bad scrapes). Set to 0 to see everything.">€/m² min <span style="opacity:0.5">ⓘ</span></label>
@@ -24111,6 +24124,8 @@
       priceMax: parseFloat(document.getElementById('price-max').value) * 1e6 || null,
       surfaceMin: parseFloat(document.getElementById('surface-min').value) || null,
       surfaceMax: parseFloat(document.getElementById('surface-max').value) || null,
+      bedroomsMin: parseFloat(document.getElementById('bedrooms-min').value) || null,
+      elevator: document.getElementById('elevator-filter').value,
       search: document.getElementById('search').value.toLowerCase().trim(),
     };
   }
@@ -24125,6 +24140,12 @@
       if (f.surfaceMin && (l.surface_m2 || 0) < f.surfaceMin) return false;
       if (f.ppmMin && l.price_per_m2 != null && l.price_per_m2 < f.ppmMin) return false;
       if (f.surfaceMax && (l.surface_m2 || Infinity) > f.surfaceMax) return false;
+      // Permissive null handling — listings missing this field PASS the filter
+      // (most bulk-scraped Bien'ici / Green Acres entries don't expose bedrooms
+      // or elevator). Strict logic would silently exclude ~80% of the dataset.
+      if (f.bedroomsMin && l.bedrooms != null && l.bedrooms < f.bedroomsMin) return false;
+      if (f.elevator === 'yes' && l.elevator === false) return false;
+      if (f.elevator === 'no' && l.elevator === true) return false;
       if (f.search) {
         const hay = `${l.title} ${l.neighborhood||''} ${l.street||''} ${l.source||''} ${l.arr_name||''}`.toLowerCase();
         if (!hay.includes(f.search)) return false;
@@ -24303,10 +24324,21 @@
       sortBy: 'price_per_m2',
       sortDir: 'asc',
     },
+    'luxury': {
+      verdicts: [],          // willing to pay full price — no verdict filter
+      renos: ['renovated'],
+      surfaceMin: 150,
+      bedroomsMin: 2,
+      elevator: 'yes',
+      sortBy: 'price_eur',
+      sortDir: 'asc',        // cheapest luxury first (best deal within bracket)
+    },
     'clear': {
       verdicts: [],
       renos: [],
-      // sort: don't change
+      surfaceMin: null,
+      bedroomsMin: null,
+      elevator: '',
     },
   };
 
@@ -24317,6 +24349,15 @@
     if (!p) return;
     [...verdictSel.options].forEach(o => { o.selected = p.verdicts.includes(o.value); });
     [...renoSel.options].forEach(o => { o.selected = p.renos.includes(o.value); });
+    if ('surfaceMin' in p) {
+      document.getElementById('surface-min').value = p.surfaceMin ?? '';
+    }
+    if ('bedroomsMin' in p) {
+      document.getElementById('bedrooms-min').value = p.bedroomsMin ?? '';
+    }
+    if ('elevator' in p) {
+      document.getElementById('elevator-filter').value = p.elevator ?? '';
+    }
     if (p.sortBy) { sortBy = p.sortBy; sortDir = p.sortDir; }
     activePreset = key === 'clear' ? null : key;
     document.querySelectorAll('.preset-btn').forEach(b => {
@@ -24361,7 +24402,7 @@
     });
   });
 
-  ['filter-arr','filter-verdict','filter-reno','price-min','price-max','surface-min','surface-max','ppm-min','search'].forEach(id => {
+  ['filter-arr','filter-verdict','filter-reno','price-min','price-max','surface-min','surface-max','bedrooms-min','elevator-filter','ppm-min','search'].forEach(id => {
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
   });
@@ -24369,8 +24410,9 @@
     arrSel.selectedIndex = -1;
     verdictSel.selectedIndex = -1;
     renoSel.selectedIndex = -1;
-    ['price-min','price-max','surface-min','surface-max','search'].forEach(id => document.getElementById(id).value = '');
+    ['price-min','price-max','surface-min','surface-max','bedrooms-min','search'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ppm-min').value = '5000'; // restore plausibility default
+    document.getElementById('elevator-filter').value = '';
     expanded.clear();
     render();
   });
