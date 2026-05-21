@@ -150,6 +150,9 @@
   tbody tr.summary-row:hover { background: #fafaf5; }
   tbody tr.summary-row.benchmark { background: #fef9e7; }
   tbody tr.summary-row.benchmark:hover { background: #fdf3d3; }
+  tbody tr.summary-row.value-candidate { background: #e1f3e8; }
+  tbody tr.summary-row.value-candidate:hover { background: #cfead9; }
+  tbody tr.summary-row.value-candidate.benchmark { background: linear-gradient(90deg, #fef9e7 0%, #e1f3e8 70%); }
   td.title-cell {
     font-weight: 500;
     max-width: 320px;
@@ -314,6 +317,7 @@
   <details id="howto-block" open style="margin-bottom:18px;background:#fef9e7;border:1px solid #f0d878;border-radius:6px;padding:14px 22px">
     <summary style="cursor:pointer;font-weight:700;color:var(--accent);font-size:14px">📖 How to find the best deals — read me first</summary>
     <div style="margin-top:12px;font-size:13px;line-height:1.65">
+      <p style="margin:0 0 10px"><strong>Rows in <span style="background:#e1f3e8;padding:1px 8px;border-radius:3px">light green</span></strong> are <strong>genuine value candidates</strong>: verdict = <span class="verdict underpriced">underpriced</span> AND €/m² ≥ €5,000 (i.e. not a data error). Start there.</p>
       <p style="margin:0 0 10px"><strong>The verdict in the rightmost column</strong> is the asking €/m² compared to <em>recorded DVF transactions</em> in the same arrondissement and surface band. Think of it as "is the seller asking inside the recent-sale range for this size + location?"</p>
       <table style="border-collapse:collapse;margin:8px 0 14px;font-size:12.5px">
         <tr><td style="padding:2px 10px 2px 0"><span class="verdict underpriced">underpriced</span></td><td>≥8% below the IQR floor — investigate closely</td></tr>
@@ -40695,8 +40699,12 @@
     const benchmarkBadge = l.benchmark ? `<span class="badge" style="background:#fef3c7;color:#92400e">Benchmark</span>` : '';
     const exclusiveBadge = l.exclusive ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">Exclusive</span>` : '';
 
+    const isValueCandidate = l.verdict === 'underpriced' && (l.price_per_m2 || 0) >= 5000;
+    const rowClasses = ['summary-row'];
+    if (l.benchmark) rowClasses.push('benchmark');
+    if (isValueCandidate) rowClasses.push('value-candidate');
     const summary = `
-      <tr class="summary-row ${l.benchmark ? 'benchmark' : ''}" data-id="${l.id}">
+      <tr class="${rowClasses.join(' ')}" data-id="${l.id}">
         <td>${l.arr_name || l.arr}</td>
         <td class="title-cell">${l.title}<span class="subtle">${l.neighborhood || ''}${l.source ? ' · ' + l.source : ''}</span><span class="badge-row">${benchmarkBadge}${exclusiveBadge}</span></td>
         <td class="numeric">€${(l.price_eur/1e6).toFixed(2)}M</td>
