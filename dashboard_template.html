@@ -493,6 +493,17 @@
     });
   }
 
+  // ---- HTML-safe text interpolation helper ----
+  function esc(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ---- Tiny markdown-ish renderer for the expert_analysis blob ----
   function renderAnalysis(md) {
     if (!md) return '';
@@ -512,7 +523,8 @@
 
   function renderRow(l, idx) {
     const isExpanded = expanded.has(l.id);
-    const ppm = l.price_per_m2 ? `€${l.price_per_m2.toLocaleString()}` : '—';
+    const ppmRaw = l.price_per_m2 || 0;
+    const ppmDisplay = l.price_per_m2 ? `€${l.price_per_m2.toLocaleString()}` : '—';
     const bandMed = l.dvf_band_median ? `€${l.dvf_band_median.toLocaleString()}` : '—';
     const premium = l.premium_vs_median_pct;
     const premStr = (premium == null) ? '—' :
@@ -520,20 +532,19 @@
     const benchmarkBadge = l.benchmark ? `<span class="badge" style="background:#fef3c7;color:#92400e">Benchmark</span>` : '';
     const exclusiveBadge = l.exclusive ? `<span class="badge" style="background:#e0e7ff;color:#3730a3">Exclusive</span>` : '';
 
-    const ppm = l.price_per_m2 || 0;
-    const isStrongValue = l.verdict === 'underpriced' && ppm >= 5000;
-    const isSoftValue = l.verdict === 'below-band' && ppm >= 5000;
+    const isStrongValue = l.verdict === 'underpriced' && ppmRaw >= 5000;
+    const isSoftValue = l.verdict === 'below-band' && ppmRaw >= 5000;
     const rowClasses = ['summary-row'];
     if (l.benchmark) rowClasses.push('benchmark');
     if (isStrongValue) rowClasses.push('value-candidate');
     else if (isSoftValue) rowClasses.push('value-candidate-soft');
     const summary = `
       <tr class="${rowClasses.join(' ')}" data-id="${l.id}">
-        <td>${l.arr_name || l.arr}</td>
-        <td class="title-cell">${l.title}<span class="subtle">${l.neighborhood || ''}${l.source ? ' · ' + l.source : ''}</span><span class="badge-row">${benchmarkBadge}${exclusiveBadge}</span></td>
+        <td>${esc(l.arr_name || l.arr)}</td>
+        <td class="title-cell">${esc(l.title)}<span class="subtle">${esc(l.neighborhood || '')}${l.source ? ' · ' + esc(l.source) : ''}</span><span class="badge-row">${benchmarkBadge}${exclusiveBadge}</span></td>
         <td class="numeric">€${(l.price_eur/1e6).toFixed(2)}M</td>
         <td class="numeric">${l.surface_m2 ? l.surface_m2.toFixed(0) + ' m²' : '—'}</td>
-        <td class="numeric">${ppm}</td>
+        <td class="numeric">${ppmDisplay}</td>
         <td class="numeric">${bandMed}</td>
         <td class="numeric">${premStr}</td>
         <td><span class="verdict ${l.verdict || 'needs-data'}">${l.verdict || 'needs-data'}</span></td>
@@ -562,20 +573,20 @@
             </div>
             <div class="meta">
               <dl>
-                <dt>Source</dt><dd>${l.source || '—'}</dd>
-                <dt>Reference</dt><dd>${l.id}</dd>
-                <dt>Street</dt><dd>${l.street || '—'}</dd>
+                <dt>Source</dt><dd>${esc(l.source || '—')}</dd>
+                <dt>Reference</dt><dd>${esc(l.id)}</dd>
+                <dt>Street</dt><dd>${esc(l.street || '—')}</dd>
                 <dt>Floor</dt><dd>${l.floor ?? '—'}${l.max_floor ? ` / ${l.max_floor}` : ''}</dd>
                 <dt>Elevator</dt><dd>${l.elevator === true ? 'Yes' : l.elevator === false ? 'No' : '—'}</dd>
                 <dt>Bedrooms</dt><dd>${l.bedrooms ?? '—'}</dd>
-                <dt>Exposure</dt><dd>${l.exposure || '—'}</dd>
+                <dt>Exposure</dt><dd>${esc(l.exposure || '—')}</dd>
                 <dt>Year built</dt><dd>${l.year_built ?? '—'}</dd>
-                <dt>Condition</dt><dd>${l.condition || '—'}</dd>
+                <dt>Condition</dt><dd>${esc(l.condition || '—')}</dd>
                 <dt>DPE</dt><dd>${l.dpe_class || '—'}</dd>
                 <dt>Charges/yr</dt><dd>${l.charges_yr_eur ? '€' + l.charges_yr_eur.toLocaleString() : '—'}</dd>
                 <dt>Taxe fonc.</dt><dd>${l.taxe_fonciere_eur ? '€' + l.taxe_fonciere_eur.toLocaleString() : '—'}</dd>
               </dl>
-              ${l.image ? `<img class="image" src="${l.image}" alt="" onerror="this.style.display='none'" />` : ''}
+              ${l.image ? `<img class="image" src="${esc(l.image)}" alt="${esc(l.title || '')}" loading="lazy" onerror="this.style.display='none'" />` : ''}
             </div>
           </div>
         </td>
@@ -605,19 +616,23 @@
       }
     });
 
-    document.querySelectorAll('tr.summary-row').forEach(tr => {
-      tr.addEventListener('click', () => {
-        const id = tr.dataset.id;
-        if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
-        render();
-      });
-    });
+    // Use event delegation instead of attaching listeners per row (avoids
+    // memory leak as render() is called many times on a 583-listing table).
+    // The listener is wired once outside render(); see below.
 
     document.getElementById('footer').textContent =
       `${sorted.length} of ${listings.length} listings shown • DVF source: data.gouv.fr geo-DVF`;
   }
 
-  // ---- Event wiring ----
+  // ---- Event wiring (delegated, attached once) ----
+  document.getElementById('listings-body').addEventListener('click', (ev) => {
+    const tr = ev.target.closest('tr.summary-row');
+    if (!tr) return;
+    const id = tr.dataset.id;
+    if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+    render();
+  });
+
   document.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.sort;

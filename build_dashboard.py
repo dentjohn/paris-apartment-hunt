@@ -269,7 +269,7 @@ def main():
         "filter_criteria": {
             "budget_eur": [1_500_000, 2_500_000],
             "surface_m2": [80, 200],
-            "geography": "Central Paris (1-8, 11)",
+            "geography": "Paris arrondissements 1-9 + 16",
         },
         "arrondissement_stats": {
             arr: {**stats, "arr_name": f"Paris {int(arr[-2:])}{'st' if arr[-2:]=='01' else 'nd' if arr[-2:]=='02' else 'rd' if arr[-2:]=='03' else 'th'}"}
