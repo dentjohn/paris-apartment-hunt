@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TestersAI Bug Report — paris-apartment-hunt</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0a1f0f 0%, #0d2818 100%);
+    color: #e8f5e9;
+    padding: 20px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .branding { text-align: center; margin-bottom: 20px; padding: 20px; }
+  .branding h1 { color: #4ade80; font-size: 2em; margin: 0; }
+  header {
+    background: linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%);
+    padding: 40px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    background: linear-gradient(45deg, #4ade80, #22c55e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  h2 { color: #4ade80; margin-bottom: 15px; }
+  .meta-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .meta-card {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #4ade80;
+  }
+  .summary {
+    background: #0d2818;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+  }
+  .stat-box {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .stat-number { font-size: 2.5em; font-weight: bold; color: #4ade80; }
+  .testers-section { background: #0d2818; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+  .testers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
+  .tester-card {
+    background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;
+    display: flex; align-items: center; gap: 15px;
+  }
+  .tester-avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    border: 2px solid #4ade80; background: #1a4d2e; color: #4ade80;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .tester-info h3 { margin-bottom: 5px; color: #4ade80; font-size: 1em; }
+  .tester-info p { font-size: 0.85em; opacity: 0.8; }
+  .bug-card {
+    background: #0d2818; padding: 25px; border-radius: 12px; margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    border-left: 6px solid;
+  }
+  .bug-card.priority-critical { border-left-color: #ff4757; }
+  .bug-card.priority-high { border-left-color: #ffa502; }
+  .bug-card.priority-medium { border-left-color: #ffd32a; }
+  .bug-card.priority-low { border-left-color: #3498db; }
+  .bug-header {
+    display: flex; justify-content: space-between; align-items: start;
+    margin-bottom: 15px; flex-wrap: wrap; gap: 10px;
+  }
+  .bug-title { font-size: 1.4em; flex: 1; color: #fff; }
+  .bug-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+  .badge { padding: 5px 12px; border-radius: 15px; font-size: 0.85em; font-weight: 600; }
+  .badge-priority { background: #ff4757; color: white; }
+  .badge-priority.high { background: #ffa502; color: white; }
+  .badge-priority.medium { background: #ffd32a; color: #333; }
+  .badge-priority.low { background: #3498db; color: white; }
+  .badge-confidence { background: #3498db; color: white; }
+  .badge-category { background: rgba(255,255,255,0.1); color: #4ade80; }
+  .badge-status-fixed { background: #1c7c4c; color: white; }
+  .badge-status-open { background: #b3261e; color: white; }
+  .bug-tester {
+    display: flex; align-items: center; gap: 10px; margin: 15px 0;
+    padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;
+  }
+  .bug-tester .tester-avatar { width: 40px; height: 40px; font-size: 14px; }
+  .bug-content { margin-top: 15px; }
+  .bug-section { margin: 15px 0; }
+  .bug-section h4 { color: #4ade80; margin-bottom: 8px; }
+  .bug-section p { color: #c8e6c9; line-height: 1.7; }
+  .fix-prompt-block {
+    background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px;
+    overflow-x: auto; color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.3);
+    font-family: 'Courier New', monospace; font-size: 0.88em; line-height: 1.5;
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .recommendations { background: #0d2818; padding: 30px; border-radius: 12px; margin-top: 30px; }
+  .recommendations ol { margin-left: 20px; margin-top: 15px; }
+  .recommendations li { margin: 10px 0; padding-left: 10px; color: #c8e6c9; }
+  footer { text-align: center; margin-top: 50px; opacity: 0.6; font-size: 0.9em; padding: 20px; }
+  footer a { color: #4ade80; text-decoration: none; }
+  @media (max-width: 768px) {
+    .bug-header { flex-direction: column; }
+    header { padding: 20px; }
+    header h1 { font-size: 1.8em; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="branding">
+    <h1>TestersAI</h1>
+    <p style="opacity:0.7;">Code Review · paris-apartment-hunt</p>
+  </div>
+
+  <header>
+    <h1>Code Review Report</h1>
+    <div class="meta-info">
+      <div class="meta-card"><strong>Repo:</strong><br><a style="color:#4ade80" href="https://github.com/dentjohn/paris-apartment-hunt">dentjohn/paris-apartment-hunt</a></div>
+      <div class="meta-card"><strong>Date:</strong><br>2026-05-21</div>
+      <div class="meta-card"><strong>Files reviewed:</strong><br>7 (Python + HTML/JS)</div>
+      <div class="meta-card"><strong>Total LoC:</strong><br>~1,800</div>
+    </div>
+  </header>
+
+  <div class="summary">
+    <h2>Summary</h2>
+    <p style="margin-bottom:14px;color:#c8e6c9">Static code review of the dashboard pipeline (build_dashboard.py, merge_listings.py) and front-end (dashboard_template.html). Found <strong>1 critical bug</strong> that prevented the dashboard JS from running at all, plus <strong>4 secondary issues</strong>. <strong>All 5 issues have been fixed and pushed</strong> in this same session.</p>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-number">5</div><div>Issues Found</div></div>
+      <div class="stat-box"><div class="stat-number" style="color:#ff4757">1</div><div>Critical</div></div>
+      <div class="stat-box"><div class="stat-number" style="color:#ffa502">1</div><div>High</div></div>
+      <div class="stat-box"><div class="stat-number" style="color:#ffd32a">2</div><div>Medium</div></div>
+      <div class="stat-box"><div class="stat-number" style="color:#3498db">1</div><div>Low</div></div>
+      <div class="stat-box"><div class="stat-number" style="color:#1c7c4c">5</div><div>Fixed</div></div>
+    </div>
+  </div>
+
+  <div class="testers-section">
+    <h2>Testers Who Participated</h2>
+    <div class="testers-grid">
+      <div class="tester-card"><div class="tester-avatar">J</div><div class="tester-info"><h3>Jason</h3><p>JavaScript Specialist</p><p><strong>3</strong> issues found</p></div></div>
+      <div class="tester-card"><div class="tester-avatar">T</div><div class="tester-info"><h3>Tariq</h3><p>Security & OWASP</p><p><strong>1</strong> issue found</p></div></div>
+      <div class="tester-card"><div class="tester-avatar">M</div><div class="tester-info"><h3>Marcus</h3><p>Performance & Networking</p><p><strong>1</strong> issue found</p></div></div>
+    </div>
+  </div>
+
+  <h2 style="margin-bottom:20px;">Issues Found</h2>
+
+  <div class="bug-card priority-critical">
+    <div class="bug-header">
+      <h3 class="bug-title">1. Duplicate <code style="background:#1a4d2e;padding:2px 6px;border-radius:3px">const ppm</code> in renderRow() — SyntaxError blocked all dashboard JS</h3>
+      <div class="bug-badges">
+        <span class="badge badge-priority">Priority: 10/10</span>
+        <span class="badge badge-confidence">Confidence: 10/10</span>
+        <span class="badge badge-category">JavaScript</span>
+        <span class="badge badge-status-fixed">FIXED</span>
+      </div>
+    </div>
+    <div class="bug-tester">
+      <div class="tester-avatar">J</div>
+      <div><strong>Jason</strong><br><span style="opacity:0.7">JavaScript Specialist</span></div>
+    </div>
+    <div class="bug-content">
+      <div class="bug-section"><h4>Why this is a bug:</h4><p>Two <code>const ppm</code> declarations exist in the same scope inside <code>renderRow(l, idx)</code> (dashboard_template.html lines 515 and 523 of the pre-fix version). <code>const</code> redeclaration is a SyntaxError at parse time, which causes the entire IIFE to refuse to execute. The static HTML (header, controls, instructions block) still rendered but the table body stayed empty because the script never ran. The bug was introduced in the "Highlight genuine value-candidate rows" commit when a second <code>const ppm = l.price_per_m2 || 0</code> was added without renaming the existing display-only declaration.</p></div>
+      <div class="bug-section"><h4>Suggested fix:</h4><p>Rename the two variables to disambiguate their purpose: <code>ppmRaw</code> for the numeric value used in comparisons, <code>ppmDisplay</code> for the string used in the cell.</p></div>
+      <div class="bug-section"><h4>Fix Prompt:</h4><pre class="fix-prompt-block">In dashboard_template.html, inside the renderRow() function, replace the two `const ppm = ...` declarations with one `const ppmRaw = l.price_per_m2 || 0` and one `const ppmDisplay = l.price_per_m2 ? \`€${l.price_per_m2.toLocaleString()}\` : '—'`. Update all downstream references: the value-candidate test uses `ppmRaw`; the rendered cell uses `${ppmDisplay}`. Verify with `node --check` on the extracted script tag.</pre></div>
+    </div>
+  </div>
+
+  <div class="bug-card priority-high">
+    <div class="bug-header">
+      <h3 class="bug-title">2. Event listener leak — render() re-attaches click handler to every row on every call</h3>
+      <div class="bug-badges">
+        <span class="badge badge-priority high">Priority: 7/10</span>
+        <span class="badge badge-confidence">Confidence: 10/10</span>
+        <span class="badge badge-category">JavaScript</span>
+        <span class="badge badge-category">Performance</span>
+        <span class="badge badge-status-fixed">FIXED</span>
+      </div>
+    </div>
+    <div class="bug-tester">
+      <div class="tester-avatar">J</div>
+      <div><strong>Jason</strong><br><span style="opacity:0.7">JavaScript Specialist</span></div>
+    </div>
+    <div class="bug-content">
+      <div class="bug-section"><h4>Why this is a bug:</h4><p>Inside <code>render()</code>, the code called <code>document.querySelectorAll('tr.summary-row').forEach(tr =&gt; tr.addEventListener('click', ...))</code>. Because <code>render()</code> is invoked on every filter change, sort, and row expand, the handlers accumulate across re-renders. With 583 listings × many user interactions in a session, the GC eventually keeps thousands of detached-but-referenced DOM listeners alive. More immediate symptom: clicking an expand-row that was previously expanded fires multiple toggle handlers on the freshly-rendered row, causing flicker.</p></div>
+      <div class="bug-section"><h4>Suggested fix:</h4><p>Use event delegation: attach a single listener to <code>#listings-body</code> once at startup, look up the closest <code>tr.summary-row</code> ancestor from <code>event.target</code>, and toggle expand state on its <code>data-id</code>.</p></div>
+      <div class="bug-section"><h4>Fix Prompt:</h4><pre class="fix-prompt-block">In dashboard_template.html: remove the `document.querySelectorAll('tr.summary-row').forEach(tr =&gt; tr.addEventListener('click', ...))` block from inside render(). Outside render() and after the IIFE has declared `expanded` and `render`, add: `document.getElementById('listings-body').addEventListener('click', (ev) =&gt; { const tr = ev.target.closest('tr.summary-row'); if (!tr) return; const id = tr.dataset.id; if (expanded.has(id)) expanded.delete(id); else expanded.add(id); render(); });`</pre></div>
+    </div>
+  </div>
+
+  <div class="bug-card priority-medium">
+    <div class="bug-header">
+      <h3 class="bug-title">3. HTML injection in user-controlled string interpolations</h3>
+      <div class="bug-badges">
+        <span class="badge badge-priority medium">Priority: 5/10</span>
+        <span class="badge badge-confidence">Confidence: 9/10</span>
+        <span class="badge badge-category">Security</span>
+        <span class="badge badge-category">XSS</span>
+        <span class="badge badge-status-fixed">FIXED</span>
+      </div>
+    </div>
+    <div class="bug-tester">
+      <div class="tester-avatar">T</div>
+      <div><strong>Tariq</strong><br><span style="opacity:0.7">Security &amp; OWASP</span></div>
+    </div>
+    <div class="bug-content">
+      <div class="bug-section"><h4>Why this is a bug:</h4><p>The row template interpolated <code>${l.title}</code>, <code>${l.street}</code>, <code>${l.neighborhood}</code>, <code>${l.source}</code>, <code>${l.condition}</code>, <code>${l.id}</code>, and <code>${l.image}</code> directly into the HTML string passed to <code>tbody.innerHTML</code>. Because the listings come from scraped sources (Le Figaro, Bien'ici, Green Acres) where field values include arbitrary free-form text, a malicious or even accidentally-malformed listing title with <code>&lt;script&gt;</code> or quote-breaking content could execute or break the page. Likelihood is low (most scrapes are well-formed), but the cost of preventing it is trivial.</p></div>
+      <div class="bug-section"><h4>Suggested fix:</h4><p>Add a small <code>esc()</code> helper that HTML-escapes <code>&amp; &lt; &gt; " '</code>, and wrap every user-controlled interpolation with it. The <code>renderAnalysis()</code> function already does this for the analysis blob — reuse the same approach for cell content.</p></div>
+      <div class="bug-section"><h4>Fix Prompt:</h4><pre class="fix-prompt-block">In dashboard_template.html, add a helper above renderAnalysis():\n  function esc(s) {\n    if (s == null) return '';\n    return String(s).replace(/&amp;/g,'&amp;amp;').replace(/&lt;/g,'&amp;lt;').replace(/&gt;/g,'&amp;gt;').replace(/"/g,'&amp;quot;').replace(/'/g,'&amp;#39;');\n  }\nThen wrap every l.title, l.street, l.neighborhood, l.source, l.condition, l.id, l.exposure, l.image, l.arr_name reference inside template literals with esc(). Leave numeric fields (price_eur, surface_m2, etc.) unwrapped since they're not user-controlled strings.</pre></div>
+    </div>
+  </div>
+
+  <div class="bug-card priority-medium">
+    <div class="bug-header">
+      <h3 class="bug-title">4. Listing thumbnails missing loading="lazy" — slows initial render</h3>
+      <div class="bug-badges">
+        <span class="badge badge-priority medium">Priority: 4/10</span>
+        <span class="badge badge-confidence">Confidence: 9/10</span>
+        <span class="badge badge-category">Performance</span>
+        <span class="badge badge-status-fixed">FIXED</span>
+      </div>
+    </div>
+    <div class="bug-tester">
+      <div class="tester-avatar">M</div>
+      <div><strong>Marcus</strong><br><span style="opacity:0.7">Performance &amp; Networking</span></div>
+    </div>
+    <div class="bug-content">
+      <div class="bug-section"><h4>Why this is a bug:</h4><p>The expanded-row meta panel renders <code>&lt;img src="${l.image}" ...&gt;</code> without <code>loading="lazy"</code>. With 583 listings (and growing), each expand triggers a fresh image fetch from remote sources (apimo.pro, Green Acres, Bien'ici). When a user expands many rows or the browser pre-fetches them, this creates dozens of concurrent network requests against third-party CDNs that may rate-limit. Native lazy loading defers fetch until the image is near the viewport.</p></div>
+      <div class="bug-section"><h4>Suggested fix:</h4><p>Add <code>loading="lazy"</code> to the <code>&lt;img&gt;</code> tag. Also add <code>alt="${esc(l.title)}"</code> for screen-reader accessibility (the original had <code>alt=""</code>).</p></div>
+      <div class="bug-section"><h4>Fix Prompt:</h4><pre class="fix-prompt-block">In dashboard_template.html, in the expanded_html template literal, change:\n  &lt;img class="image" src="${l.image}" alt="" onerror="this.style.display='none'" /&gt;\nto:\n  &lt;img class="image" src="${esc(l.image)}" alt="${esc(l.title || '')}" loading="lazy" onerror="this.style.display='none'" /&gt;</pre></div>
+    </div>
+  </div>
+
+  <div class="bug-card priority-low">
+    <div class="bug-header">
+      <h3 class="bug-title">5. Subtitle shows stale "Central Paris (1-8, 11)" after dataset prune to 1-9 + 16</h3>
+      <div class="bug-badges">
+        <span class="badge badge-priority low">Priority: 2/10</span>
+        <span class="badge badge-confidence">Confidence: 10/10</span>
+        <span class="badge badge-category">Documentation</span>
+        <span class="badge badge-status-fixed">FIXED</span>
+      </div>
+    </div>
+    <div class="bug-tester">
+      <div class="tester-avatar">J</div>
+      <div><strong>Jason</strong><br><span style="opacity:0.7">JavaScript Specialist</span></div>
+    </div>
+    <div class="bug-content">
+      <div class="bug-section"><h4>Why this is a bug:</h4><p>build_dashboard.py wrote <code>filter_criteria.geography = "Central Paris (1-8, 11)"</code> into the dashboard payload. The subtitle line at the top of the page reads from this. After pruning the dataset to arrondissements 1-9 + 16, the subtitle still said "1-8, 11". Cosmetic but misleading.</p></div>
+      <div class="bug-section"><h4>Suggested fix:</h4><p>Update the literal to <code>"Paris arrondissements 1-9 + 16"</code>.</p></div>
+      <div class="bug-section"><h4>Fix Prompt:</h4><pre class="fix-prompt-block">In build_dashboard.py, in the filter_criteria block inside main(), change:\n  "geography": "Central Paris (1-8, 11)"\nto:\n  "geography": "Paris arrondissements 1-9 + 16"\nThen rerun build_dashboard.py.</pre></div>
+    </div>
+  </div>
+
+  <div class="recommendations">
+    <h2>Other Observations (Not Blocking)</h2>
+    <ol>
+      <li><strong>Sort-direction ternary is dead code</strong> at the column-header click handler: <code>['price_eur', ...].includes(k) ? 'asc' : 'asc'</code> — both branches are <code>'asc'</code>. Probably meant <code>'desc'</code> for numeric columns. Leave as-is if you want first-click-ascending always (e.g., €/m² ascending shows cheapest first, which is the value-hunting workflow); otherwise change the second branch to <code>'desc'</code>.</li>
+      <li><strong><code>arrondissement_stats</code> arr_name suffix logic in build_dashboard.py</strong> is a brittle string-suffix match. Works for 1-9 + 16 today; if you ever re-add the 21st arrondissement (joking), it'd say "21th". Refactor to a small helper if you grow the scope.</li>
+      <li><strong><code>data_quality: "search-results-extract"</code></strong> is set on most scraped entries but never surfaced in the meta panel of the expanded row. Adding it would help you visually distinguish curated entries (Nouvelle Vague, the original Sainte-Apolline benchmark) from bulk scrapes.</li>
+      <li><strong>merge_listings.py git commit step</strong> will exit non-zero if the rebuild produced no actual changes. Edge case — happens if you re-merge the same input twice. Consider <code>git diff --quiet || git commit ...</code> or wrap in a try.</li>
+      <li><strong>No CI / test coverage</strong>. For a project that's growing in importance, a tiny pytest that runs <code>build_dashboard.py</code> on a fixture <code>listings_input.json</code> and asserts the output exists + parses + has the expected listing count would catch regressions like #1 in seconds instead of hours.</li>
+    </ol>
+  </div>
+
+  <footer>
+    <p>Generated by TestersAI • Code review for paris-apartment-hunt</p>
+    <p>All 5 critical/medium issues fixed and pushed in the same session</p>
+  </footer>
+</div>
+</body>
+</html>
