@@ -300,6 +300,10 @@
     </div>
   </div>
   <div class="ctrl">
+    <label title="Hides implausibly low €/m² that are almost certainly data errors (viager mislabels, fractional ownership, bad scrapes). Set to 0 to see everything.">€/m² min <span style="opacity:0.5">ⓘ</span></label>
+    <input type="number" id="ppm-min" step="500" value="5000" style="min-width:90px" />
+  </div>
+  <div class="ctrl">
     <label>Search</label>
     <input type="text" id="search" placeholder="street, neighborhood, agent…" />
   </div>
@@ -40595,6 +40599,7 @@
     return {
       arrs: [...arrSel.selectedOptions].map(o => o.value),
       verdicts: [...verdictSel.selectedOptions].map(o => o.value),
+      ppmMin: parseFloat(document.getElementById('ppm-min').value) || null,
       priceMin: parseFloat(document.getElementById('price-min').value) * 1e6 || null,
       priceMax: parseFloat(document.getElementById('price-max').value) * 1e6 || null,
       surfaceMin: parseFloat(document.getElementById('surface-min').value) || null,
@@ -40610,6 +40615,7 @@
       if (f.priceMin && (l.price_eur || 0) < f.priceMin) return false;
       if (f.priceMax && (l.price_eur || Infinity) > f.priceMax) return false;
       if (f.surfaceMin && (l.surface_m2 || 0) < f.surfaceMin) return false;
+      if (f.ppmMin && l.price_per_m2 != null && l.price_per_m2 < f.ppmMin) return false;
       if (f.surfaceMax && (l.surface_m2 || Infinity) > f.surfaceMax) return false;
       if (f.search) {
         const hay = `${l.title} ${l.neighborhood||''} ${l.street||''} ${l.source||''} ${l.arr_name||''}`.toLowerCase();
@@ -40759,7 +40765,7 @@
     });
   });
 
-  ['filter-arr','filter-verdict','price-min','price-max','surface-min','surface-max','search'].forEach(id => {
+  ['filter-arr','filter-verdict','price-min','price-max','surface-min','surface-max','ppm-min','search'].forEach(id => {
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
   });
@@ -40767,6 +40773,7 @@
     arrSel.selectedIndex = -1;
     verdictSel.selectedIndex = -1;
     ['price-min','price-max','surface-min','surface-max','search'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ppm-min').value = '5000'; // restore plausibility default
     expanded.clear();
     render();
   });
