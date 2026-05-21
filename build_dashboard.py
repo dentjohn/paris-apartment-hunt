@@ -12,6 +12,8 @@ To add new listings: append to LISTINGS below and rerun.
 
 from __future__ import annotations
 import json
+import re
+import urllib.parse
 from datetime import date
 from pathlib import Path
 import pandas as pd
@@ -107,6 +109,97 @@ def _bucket_stats(df: pd.DataFrame, surface: float | None) -> dict:
         "p10": float(s.quantile(0.10)),
         "p90": float(s.quantile(0.90)),
     }
+
+
+def _listing_url(L: dict) -> tuple[str, str]:
+    """Resolve the best clickable URL for a listing.
+
+    Returns (url, kind). kind="specific" means it points to a unique listing
+    page. kind="search" means it points to a (narrow) result set on the
+    source site or a Google site-restricted search.
+
+    Most scraped sources (Bien'ici, SeLoger, Barnes, Daniel Féau, Green Acres)
+    don't expose deep links to individual listings — only filterable search
+    URLs or JS-rendered detail pages. For those, we synthesize the narrowest
+    possible search URL using price ±2%, surface ±5%, arr, and (when
+    available) neighborhood.
+    """
+    url = (L.get("url") or "").strip()
+    source = (L.get("source") or "").lower()
+
+    # ---- Specific deep links: pass through ----
+    if "/annonce-" in url:
+        return url, "specific"
+    if "ap.immo/p/" in url:
+        return url, "specific"
+    if re.match(r"^https://properties\.lefigaro\.com/announces/[^/]+/\d+/?$", url):
+        return url, "specific"
+
+    # ---- Fall back to a synthesized search URL ----
+    arr = L.get("arr") or ""
+    arr_n = int(arr[-2:]) if arr.startswith("751") and arr[-2:].isdigit() else None
+    zipcode = f"750{arr[-2:]}" if arr_n is not None else None
+    price = L.get("price_eur")
+    surface = L.get("surface_m2")
+    neighborhood = L.get("neighborhood") or ""
+
+    # Without price + surface we can't narrow the search — give back the
+    # original URL but mark it as search so the dashboard UI is honest.
+    if not (price and surface):
+        return url, "search"
+
+    p_lo = int(price * 0.98)
+    p_hi = int(price * 1.02)
+    s_lo = max(1, int(surface * 0.95))
+    s_hi = int(surface * 1.05)
+
+    # Bien'ici has URL-filterable search — most precise option for them.
+    if "bien" in source and "ici" in source:
+        rooms = L.get("pieces") or 4
+        return (
+            f"https://www.bienici.com/recherche/achat/paris-{zipcode}"
+            f"/appartement/{rooms}-pieces-et-plus"
+            f"?prix-min={p_lo}&prix-max={p_hi}"
+            f"&surface-min={s_lo}&surface-max={s_hi}",
+            "search",
+        )
+
+    # SeLoger search URL has a documented form too.
+    if "seloger" in source:
+        rooms = L.get("pieces") or 4
+        return (
+            f"https://www.seloger.com/list.htm?projects=2&types=1"
+            f"&places=%5B%7B%22subDivisions%22%3A%5B%22{arr}%22%5D%7D%5D"
+            f"&price={p_lo}%2F{p_hi}&surface={s_lo}%2F{s_hi}"
+            f"&rooms={rooms}",
+            "search",
+        )
+
+    # Site-restricted Google search for the rest (Green Acres, Barnes,
+    # Daniel Féau, Sotheby's, Nouvelle Vague when the ap.immo link is broken).
+    SITE_MAP = {
+        "green acres": "site:green-acres.fr OR site:green-acres.com",
+        "barnes": "site:barnes-paris.com",
+        "daniel féau": "site:danielfeau.com",
+        "daniel feau": "site:danielfeau.com",
+        "sotheby": "site:parissothebysrealty.com OR site:sothebysrealty.com",
+        "nouvelle vague": "site:nouvellevague-paris.fr OR site:ap.immo",
+        "le figaro": "site:immobilier.lefigaro.fr OR site:properties.lefigaro.com",
+    }
+    site_filter = next((v for k, v in SITE_MAP.items() if k in source), "")
+
+    q_parts = []
+    if site_filter:
+        q_parts.append(site_filter)
+    q_parts.append(f'"{int(round(surface))} m²"')
+    # French thousand-separator (space) — Google handles unicode space
+    q_parts.append(f'"{int(price):,}"'.replace(",", " "))
+    if neighborhood:
+        q_parts.append(f'"{neighborhood}"')
+    if arr_n:
+        q_parts.append(f'Paris {arr_n}')
+    q = urllib.parse.quote(" ".join(q_parts), safe='":')
+    return f"https://www.google.com/search?q={q}", "search"
 
 
 def arr_name(arr_code: str) -> str:
@@ -263,9 +356,12 @@ def main():
                 delta_med = (ask_per_m2 - band["median"]) / band["median"] * 100
 
         analysis = _expert_analysis(L, overall, band)
+        resolved_url, url_kind = _listing_url(L)
 
         listings_out.append({
             **L,
+            "url": resolved_url,
+            "url_kind": url_kind,
             "price_per_m2": round(ask_per_m2) if ask_per_m2 else None,
             "dvf_arr_median": round(overall["median"]) if overall else None,
             "dvf_arr_n": overall.get("n") if overall else None,

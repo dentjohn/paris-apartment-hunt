@@ -159,6 +159,15 @@
     font-weight: 500;
     max-width: 320px;
   }
+  td.title-cell a.title-link {
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border);
+  }
+  td.title-cell a.title-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
   td .subtle {
     color: var(--muted);
     font-size: 11px;
@@ -541,7 +550,7 @@
     const summary = `
       <tr class="${rowClasses.join(' ')}" data-id="${l.id}">
         <td>${esc(l.arr_name || l.arr)}</td>
-        <td class="title-cell">${esc(l.title)}<span class="subtle">${esc(l.neighborhood || '')}${l.source ? ' · ' + esc(l.source) : ''}</span><span class="badge-row">${benchmarkBadge}${exclusiveBadge}</span></td>
+        <td class="title-cell">${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="title-link" title="${l.url_kind === 'specific' ? 'Open listing in new tab' : 'Open narrow search for this listing in new tab'}">${esc(l.title)}${l.url_kind === 'specific' ? '' : ' <span style=&quot;opacity:0.6;font-size:0.85em&quot;>(search ↗)</span>'}</a>` : esc(l.title)}<span class="subtle">${esc(l.neighborhood || '')}${l.source ? ' · ' + esc(l.source) : ''}</span><span class="badge-row">${benchmarkBadge}${exclusiveBadge}</span></td>
         <td class="numeric">€${(l.price_eur/1e6).toFixed(2)}M</td>
         <td class="numeric">${l.surface_m2 ? l.surface_m2.toFixed(0) + ' m²' : '—'}</td>
         <td class="numeric">${ppmDisplay}</td>
@@ -569,7 +578,7 @@
                 ${arrLine}<br>
                 ${bandLine}
               </div>
-              ${l.url ? `<a class="url-link" href="${l.url}" target="_blank" rel="noopener">Open listing ↗</a>` : ''}
+              ${l.url ? `<a class="url-link" href="${esc(l.url)}" target="_blank" rel="noopener" title="${l.url_kind === 'specific' ? 'Deep link to the listing page' : 'Source site does not expose deep links — this is a narrow search that should match 1-3 results'}">${l.url_kind === 'specific' ? 'Open listing ↗' : 'Find on source ↗'}</a>` : ''}
             </div>
             <div class="meta">
               <dl>

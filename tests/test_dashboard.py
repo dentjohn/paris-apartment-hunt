@@ -141,6 +141,59 @@ def test_listings_input_arr_codes_well_formed():
 # ---------------------------------------------------------------------------
 # Helper tests
 # ---------------------------------------------------------------------------
+def test_listing_url_specific_passthrough():
+    """Specific deep-link URLs must pass through unchanged with kind='specific'."""
+    sys.path.insert(0, str(ROOT))
+    from build_dashboard import _listing_url
+    cases = [
+        # Le Figaro Immobilier annonce-XXX
+        {"url": "https://immobilier.lefigaro.fr/annonces/annonce-12345.html",
+         "source": "Hosman (via Le Figaro)", "arr": "75103",
+         "price_eur": 2_000_000, "surface_m2": 100},
+        # ap.immo (Nouvelle Vague)
+        {"url": "https://ap.immo/p/86280768", "source": "Nouvelle Vague",
+         "arr": "75106", "price_eur": 1_700_000, "surface_m2": 83},
+        # Le Figaro Properties /announces/.../{id}/
+        {"url": "https://properties.lefigaro.com/announces/apartment-paris-ile+de+france-france/100551831/",
+         "source": "Le Figaro", "arr": "75103",
+         "price_eur": 2_000_000, "surface_m2": 186},
+    ]
+    for L in cases:
+        url, kind = _listing_url(L)
+        assert kind == "specific", f"{L['url']} should be specific, got {kind}"
+        assert url == L["url"], f"specific URL should pass through unchanged"
+
+
+def test_listing_url_bienici_synthesizes_narrow_filter():
+    """Bien'ici search-only sources should get a narrow filter URL."""
+    sys.path.insert(0, str(ROOT))
+    from build_dashboard import _listing_url
+    L = {"url": "https://www.bienici.com/recherche/achat/paris-75000/...",
+         "source": "Bien'ici aggregator", "arr": "75116",
+         "price_eur": 1_500_000, "surface_m2": 120, "pieces": 5}
+    url, kind = _listing_url(L)
+    assert kind == "search"
+    assert "bienici.com" in url
+    assert "paris-75016" in url
+    assert "prix-min=" in url and "prix-max=" in url
+    assert "surface-min=" in url and "surface-max=" in url
+
+
+def test_listing_url_falls_back_to_google_with_site_filter():
+    """Listings without specific URLs and not on Bien'ici/SeLoger should get
+    Google site-restricted search URLs with price + surface + arr."""
+    sys.path.insert(0, str(ROOT))
+    from build_dashboard import _listing_url
+    L = {"url": "https://www.green-acres.fr/property/Av0778vy",
+         "source": "Vaneau (via Green Acres)", "arr": "75115",
+         "price_eur": 1_290_000, "surface_m2": 109}
+    url, kind = _listing_url(L)
+    assert kind == "search"
+    assert "google.com/search" in url
+    assert "green-acres" in url
+    assert "1%20290%20000" in url or "1+290+000" in url
+
+
 def test_arr_name_ordinals():
     """arr_name() must produce correct English ordinals — especially 11/12/13."""
     sys.path.insert(0, str(ROOT))
