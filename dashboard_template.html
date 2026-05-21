@@ -110,6 +110,53 @@
     font-family: inherit;
   }
   .reset-btn:hover { background: var(--bg); }
+  .presets {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 28px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .presets-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .preset-btn {
+    background: white;
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--accent);
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .preset-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .preset-btn.preset-clear {
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: auto;
+  }
+  .preset-btn.preset-clear:hover {
+    background: var(--muted);
+  }
+  .preset-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
   main {
     padding: 18px 28px;
   }
@@ -301,6 +348,14 @@
   <div class="summary-bar" id="summary-bar"></div>
 </header>
 
+<div class="presets">
+  <span class="presets-label">Quick presets:</span>
+  <button class="preset-btn" data-preset="quality-move-in" title="Underpriced or below-band listings with verified move-in-ready condition, sorted by biggest discount first">🏠 Quality move-in deals</button>
+  <button class="preset-btn" data-preset="renovation-arbitrage" title="Already-discounted listings where photos confirm work is needed — discount + renovation lift potential, sorted by cheapest €/m² first">🔨 Renovation arbitrage</button>
+  <button class="preset-btn" data-preset="haussmannian-charm" title="Fair-priced listings (in-band) with preserved period features (moldings, parquet, fireplace)">🏛️ Haussmannian charm</button>
+  <button class="preset-btn preset-clear" data-preset="clear" title="Clear verdict + renovation filters (keeps arr / price / surface / €/m² min)">Clear verdict + reno</button>
+</div>
+
 <div class="controls">
   <div class="ctrl">
     <label>Arrondissement</label>
@@ -369,6 +424,7 @@
         <li>Floor, exposure (north vs south), view, street noise — none are in DVF. A "below-band" verdict often reflects these handicaps, not an actual discount.</li>
         <li>The <code>data_quality: "search-results-extract"</code> tag on most listings means surface/price were parsed from listing cards — confirm before serious interest.</li>
       </ul>
+      <p style="margin:0 0 6px;"><strong>Shortcut: use the preset chips above the filters</strong> — 🏠 Quality move-in deals, 🔨 Renovation arbitrage, 🏛️ Haussmannian charm. Each preset sets verdict + renovation + sort in one click; your arrondissement/price/surface filters are preserved.</p>
       <p style="margin:0;color:var(--muted);font-size:12px">Click the <strong>📊 charts</strong> below to see how each arrondissement's price distribution stacks up. Methodology in <a href="https://github.com/dentjohn/paris-apartment-hunt/blob/main/dvf_analysis.md" target="_blank" rel="noopener">dvf_analysis.md</a>; financial model in <a href="https://github.com/dentjohn/paris-apartment-hunt/blob/main/yield_model.md" target="_blank" rel="noopener">yield_model.md</a>.</p>
     </div>
   </details>
@@ -668,6 +724,65 @@
     document.getElementById('footer').textContent =
       `${sorted.length} of ${listings.length} listings shown • DVF source: data.gouv.fr geo-DVF`;
   }
+
+  // ---- Preset filter combinations ----
+  // Each preset sets verdict + renovation + sort. Arr / price / surface /
+  // €/m² min / search are preserved so the user's geographic and budget
+  // scoping carries across presets.
+  const PRESETS = {
+    'quality-move-in': {
+      verdicts: ['underpriced', 'below-band'],
+      renos: ['renovated'],
+      sortBy: 'premium_vs_median_pct',
+      sortDir: 'asc',  // most negative = biggest discount first
+    },
+    'renovation-arbitrage': {
+      verdicts: ['underpriced'],
+      renos: ['needs-work'],
+      sortBy: 'price_per_m2',
+      sortDir: 'asc',
+    },
+    'haussmannian-charm': {
+      verdicts: ['in-band'],
+      renos: ['period-preserved'],
+      sortBy: 'price_per_m2',
+      sortDir: 'asc',
+    },
+    'clear': {
+      verdicts: [],
+      renos: [],
+      // sort: don't change
+    },
+  };
+
+  let activePreset = null;
+
+  function applyPreset(key) {
+    const p = PRESETS[key];
+    if (!p) return;
+    [...verdictSel.options].forEach(o => { o.selected = p.verdicts.includes(o.value); });
+    [...renoSel.options].forEach(o => { o.selected = p.renos.includes(o.value); });
+    if (p.sortBy) { sortBy = p.sortBy; sortDir = p.sortDir; }
+    activePreset = key === 'clear' ? null : key;
+    document.querySelectorAll('.preset-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.preset === activePreset);
+    });
+    render();
+  }
+
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+  });
+
+  // Manual changes to verdict / reno filters deactivate any active preset
+  [verdictSel, renoSel].forEach(sel => {
+    sel.addEventListener('change', () => {
+      if (activePreset) {
+        activePreset = null;
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      }
+    });
+  });
 
   // ---- Event wiring (delegated, attached once) ----
   document.getElementById('listings-body').addEventListener('click', (ev) => {
