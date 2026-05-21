@@ -130,10 +130,13 @@ def _listing_url(L: dict) -> tuple[str, str]:
     # ---- Specific deep links: pass through ----
     if "/annonce-" in url:
         return url, "specific"
-    if "ap.immo/p/" in url:
-        return url, "specific"
     if re.match(r"^https://properties\.lefigaro\.com/announces/[^/]+/\d+/?$", url):
         return url, "specific"
+    # NOTE: ap.immo/p/ URLs were specific but require a Nouvelle Vague broker
+    # login to view — clicking landed on a login wall. We deliberately fall
+    # through to the Google site-restricted search below so the click lands on
+    # something useful (the agent's website, a syndicated listing on
+    # immobilier.fr, etc.).
 
     # ---- Fall back to a synthesized search URL ----
     arr = L.get("arr") or ""

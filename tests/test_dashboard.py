@@ -142,7 +142,7 @@ def test_listings_input_arr_codes_well_formed():
 # Helper tests
 # ---------------------------------------------------------------------------
 def test_listing_url_specific_passthrough():
-    """Specific deep-link URLs must pass through unchanged with kind='specific'."""
+    """Specific deep-link URLs (Le Figaro) must pass through unchanged with kind='specific'."""
     sys.path.insert(0, str(ROOT))
     from build_dashboard import _listing_url
     cases = [
@@ -150,9 +150,6 @@ def test_listing_url_specific_passthrough():
         {"url": "https://immobilier.lefigaro.fr/annonces/annonce-12345.html",
          "source": "Hosman (via Le Figaro)", "arr": "75103",
          "price_eur": 2_000_000, "surface_m2": 100},
-        # ap.immo (Nouvelle Vague)
-        {"url": "https://ap.immo/p/86280768", "source": "Nouvelle Vague",
-         "arr": "75106", "price_eur": 1_700_000, "surface_m2": 83},
         # Le Figaro Properties /announces/.../{id}/
         {"url": "https://properties.lefigaro.com/announces/apartment-paris-ile+de+france-france/100551831/",
          "source": "Le Figaro", "arr": "75103",
@@ -162,6 +159,20 @@ def test_listing_url_specific_passthrough():
         url, kind = _listing_url(L)
         assert kind == "specific", f"{L['url']} should be specific, got {kind}"
         assert url == L["url"], f"specific URL should pass through unchanged"
+
+
+def test_listing_url_apimo_rewritten_to_search():
+    """ap.immo URLs hit a Nouvelle Vague login wall — they must be rewritten
+    to a Google site-restricted search so the click lands on something useful."""
+    sys.path.insert(0, str(ROOT))
+    from build_dashboard import _listing_url
+    L = {"url": "https://ap.immo/p/86280768", "source": "Nouvelle Vague",
+         "arr": "75106", "price_eur": 1_700_000, "surface_m2": 83,
+         "neighborhood": "Saint-Germain-des-Prés"}
+    url, kind = _listing_url(L)
+    assert kind == "search", f"ap.immo URLs should be rewritten to search, got {kind}"
+    assert "google.com/search" in url
+    assert "nouvellevague-paris.fr" in url or "ap.immo" in url
 
 
 def test_listing_url_bienici_synthesizes_narrow_filter():
